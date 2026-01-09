@@ -13,6 +13,8 @@ typedef struct {
 #define UINT256_0 ((uint256_t){.low=UINT128_0, .high=UINT128_0})
 #define UINT256_1 ((uint256_t){.low=UINT128_1, .high=UINT128_0})
 
+#define U128_TO_U256(x) ((uint256_t){.low=(x), .high=UINT128_0})
+
 typedef struct {
     uint256_t quotient;
     uint256_t remainder;
@@ -41,8 +43,8 @@ uint256_t u256_bit_or_u64(uint256_t a, uint64_t b);
 uint256_t u256_bit_and_u64(uint256_t a, uint64_t b);
 
 //
-uint256_t u256_rshift(uint256_t n, uint8_t amount);
-uint256_t u256_lshift(uint256_t n, uint8_t amount);
+uint256_t u256_rshift(uint256_t n, uint16_t amount);
+uint256_t u256_lshift(uint256_t n, uint16_t amount);
 
 //
 bool u256_le(uint256_t a, uint256_t b);
@@ -101,7 +103,7 @@ uint256_t u256_add_u64(uint256_t a, uint64_t b) {
         .low = u128_add_u64(a.low, b),
         .high = a.high,
     };
-    if(u128_gt_u64(a.low, 0) && u128_lt_u64(u128_sub(UINT128_MAX, a.low), b)) {
+    if(u128_gt_u64(a.low, 0) && u128_le_u64(u128_sub(UINT128_MAX, a.low), b)) {
         res.high = u128_inc(res.high);
     }
     return res;
@@ -186,9 +188,9 @@ uint256_t u256_mul(uint256_t a, uint256_t b) {
     uint128_t t_2 = u128_mul_u64(b_hl, a_ll);
     uint128_t t_carry = UINT128_0;
     uint128_t third = t_0;
-    t_carry =  u128_add_u64(t_carry, (u128_gt_u64(third, 0) && u128_ge(t_1, u128_sub(UINT128_MAX, third))) ? 1 : 0);
+    t_carry =  u128_add_u64(t_carry, (u128_gt_u64(third, 0) && u128_gt(t_1, u128_sub(UINT128_MAX, third))) ? 1 : 0);
     third = u128_add(third, t_1);
-    t_carry =  u128_add_u64(t_carry, (u128_gt_u64(third, 0) && u128_ge(t_2, u128_sub(UINT128_MAX, third))) ? 1 : 0);
+    t_carry =  u128_add_u64(t_carry, (u128_gt_u64(third, 0) && u128_gt(t_2, u128_sub(UINT128_MAX, third))) ? 1 : 0);
     third = u128_add(third, t_2);
 
     // Fourth
@@ -198,7 +200,7 @@ uint256_t u256_mul(uint256_t a, uint256_t b) {
 
     // Second
     uint128_t temp = (uint128_t){.low=first.high, .high=0};
-    t_carry =  u128_add_u64(t_carry, (u128_gt_u64(second, 0) && u128_ge(temp, u128_sub(UINT128_MAX, second))) ? 1 : 0);
+    t_carry =  u128_add_u64(t_carry, (u128_gt_u64(second, 0) && u128_gt(temp, u128_sub(UINT128_MAX, second))) ? 1 : 0);
     second = u128_add(second, temp);
 
     // Third
@@ -254,7 +256,7 @@ bool u256_gt_u64(uint256_t a, uint64_t b) {
     return (a.high.high || a.high.low) ? true : u128_gt_u64(a.low, b);
 }
 
-uint256_t u256_lshift(uint256_t n, uint8_t amount) {
+uint256_t u256_lshift(uint256_t n, uint16_t amount) {
     uint256_t res = (uint256_t){
         .high = n.high,
         .low = n.low,
@@ -269,7 +271,7 @@ uint256_t u256_lshift(uint256_t n, uint8_t amount) {
     return res;
 }
 
-uint256_t u256_rshift(uint256_t n, uint8_t amount) {
+uint256_t u256_rshift(uint256_t n, uint16_t amount) {
     uint256_t res = (uint256_t){
         .low = n.low,
         .high = n.high,
@@ -277,7 +279,7 @@ uint256_t u256_rshift(uint256_t n, uint8_t amount) {
 
     for(int i = 0; i < amount; ++i) {
         res.low = u128_rshift(res.low, 1);
-        res.low = u128_bit_or(res.low, u128_bit_and(u128_lshift(res.high, 127), (uint128_t){.low=0, .high=(1ul << 63)}));
+        res.low = u128_bit_or(res.low, u128_lshift(u128_bit_and_u64(res.high, 1), 127));
         res.high = u128_rshift(res.high, 1);
     }
 
