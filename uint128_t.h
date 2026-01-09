@@ -46,8 +46,8 @@ uint128_t u128_bit_or_u64(uint128_t a, uint64_t b);
 uint128_t u128_bit_and_u64(uint128_t a, uint64_t b);
 
 //
-uint128_t u128_rshift(uint128_t n, uint8_t amount);
-uint128_t u128_lshift(uint128_t n, uint8_t amount);
+uint128_t u128_rshift(uint128_t n, uint16_t amount);
+uint128_t u128_lshift(uint128_t n, uint16_t amount);
 
 //
 bool u128_le(uint128_t a, uint128_t b);
@@ -263,7 +263,7 @@ bool u128_gt_u64(uint128_t a, uint64_t b) {
     return a.high ? true : a.low > b;
 }
 
-uint128_t u128_lshift(uint128_t n, uint8_t amount) {
+uint128_t u128_lshift(uint128_t n, uint16_t amount) {
     uint128_t res = (uint128_t){
         .high = n.high,
         .low = n.low,
@@ -278,7 +278,7 @@ uint128_t u128_lshift(uint128_t n, uint8_t amount) {
     return res;
 }
 
-uint128_t u128_rshift(uint128_t n, uint8_t amount) {
+uint128_t u128_rshift(uint128_t n, uint16_t amount) {
     uint128_t res = (uint128_t){
         .low = n.low,
         .high = n.high,

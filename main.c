@@ -14,6 +14,9 @@
 #define UINT256_T_IMPLEMENTATION
 #include "uint256_t.h"
 
+#define UINT512_T_IMPLEMENTATION
+#include "uint512_t.h"
+
 
 int lpad(char* dest, const char* data, size_t len, char pad_char, size_t padding) {
     if (dest == NULL || data == NULL) return -1;
@@ -130,6 +133,55 @@ void u256_printf(uint256_t n) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
+// UINT512_T
+
+uint512_t u512_from_str(const char* str, int size) {
+    // TODO: Improve on this so that it can deal with shorter strings than 32
+    if (size != 512 / 4) {
+        return (uint512_t){};
+    }
+    uint512_t res = {0};
+    uint8_t* cur = (uint8_t*)&res;
+   
+    uint16_t* str16 = (uint16_t*)str;
+    const int len = size / 2;
+    for (int i = 0; i < len; ++i) {
+        const int idx = len - i - 1;
+        cur[i] = hex_bits((char*)(str16 + idx));
+    }
+    return res;
+}
+
+void u512_sprintf(char* out, uint512_t n) {
+    if (!out) return;
+    
+    if (n.high.high.high) {
+        sprintf(out, "%lx%0*lx%0*lx%0*lx%0*lx%0*lx%0*lx%0*lx", n.high.high.high, 64/4, n.high.high.low, 64/4, n.high.low.high, 64/4, n.high.low.low, 64/4, n.low.high.high, 64/4, n.low.high.low, 64/4, n.low.low.high, 64/4, n.low.low.low);
+    } else if(n.high.high.low) {
+        sprintf(out, "%lx%0*lx%0*lx%0*lx%0*lx%0*lx%0*lx", n.high.high.low, 64/4, n.high.low.high, 64/4, n.high.low.low, 64/4, n.low.high.high, 64/4, n.low.high.low, 64/4, n.low.low.high, 64/4, n.low.low.low);
+    } else if(n.high.low.high) {
+        sprintf(out, "%lx%0*lx%0*lx%0*lx%0*lx%0*lx", n.high.low.high, 64/4, n.high.low.low, 64/4, n.low.high.high, 64/4, n.low.high.low, 64/4, n.low.low.high, 64/4, n.low.low.low);
+    } else if (n.high.low.low) {
+        sprintf(out, "%lx%0*lx%0*lx%0*lx%0*lx", n.high.low.low, 64/2, n.low.high.high, 64/4, n.low.high.low, 64/4, n.low.low.high, 64/4, n.low.low.low);
+    } else if(n.low.high.high) {
+        sprintf(out, "%lx%0*lx%0*lx%0*lx", n.low.high.high, 64/4, n.low.high.low, 64/4, n.low.low.high, 64/4, n.low.low.low);
+    } else if(n.low.high.low) {
+        sprintf(out, "%lx%0*lx%0*lx", n.low.high.low, 64/4, n.low.low.high, 64/4, n.low.low.low);
+    } else if(n.low.low.high) {
+        sprintf(out, "%lx%0*lx", n.low.low.high, 64/4, n.low.low.low);
+    } else {
+        sprintf(out, "%lx", n.low.low.low);
+    }
+}
+
+void u512_printf(uint512_t n) {
+    static char buffer[512 / 4 + 1] = {0};
+    memset(buffer, 0, sizeof(buffer));
+    u512_sprintf(buffer, n);
+    printf("%s", buffer);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////
 
 void print_usage(const char* prog) {
     printf("Usage:\n");
@@ -211,7 +263,7 @@ void print_usage(const char* prog) {
             printf("ge=%d\n", type_prefix##_##ge_u64(a, b));                      \
             printf("gt=%d\n", type_prefix##_##gt_u64(a, b));                      \
         } else if (strcmp(mode, "shift") == 0 && n_args == 3) {                   \
-            uint8_t amount = (uint8_t)atoi(b_str);                                \
+            uint16_t amount = (uint16_t)atoi(b_str);                              \
                                                                                   \
             printf("lshift=");                                                    \
             type_prefix##_##printf(type_prefix##_##lshift(a, amount));            \
@@ -257,6 +309,7 @@ void print_usage(const char* prog) {
 
 CREATE_TEST(uint128_t, u128);
 CREATE_TEST(uint256_t, u256);
+CREATE_TEST(uint512_t, u512);
 
 int main(int argc, char* argv[]) {
     if (argc < 4) {
@@ -272,6 +325,11 @@ int main(int argc, char* argv[]) {
         }
     } else if (strncmp("256", argv[1], 3) == 0) {
         if(u256_test(argc - 2, argv[2], argv[3], argv[4]) == 1) {
+            print_usage(argv[0]);
+            return 1;
+        }
+    } else if (strncmp("512", argv[1], 3) == 0) {
+        if(u512_test(argc - 2, argv[2], argv[3], argv[4]) == 1) {
             print_usage(argv[0]);
             return 1;
         }
