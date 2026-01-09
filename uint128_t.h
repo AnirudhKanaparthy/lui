@@ -15,6 +15,8 @@ typedef struct {
 } uint128_t;
 
 #define UINT128_MAX ((uint128_t){.low=ULLONG_MAX, .high=ULLONG_MAX})
+#define UINT128_0 ((uint128_t){.low=0, .high=0})
+#define UINT128_1 ((uint128_t){.low=1, .high=0})
 
 typedef struct {
     uint128_t quotient;
@@ -69,7 +71,8 @@ uint128_t u128_inc(uint128_t a);
 
 #endif // UINT128_T_H_
 
-#if defined(UINT128_T_IMPLEMENTATION)
+#if defined(UINT128_T_IMPLEMENTATION) && !defined(UINT128_T_IMPLEMENTATION_DEFINED)
+#define UINT128_T_IMPLEMENTATION_DEFINED
 
 uint128_t u128_add(uint128_t a, uint128_t b) {
     uint128_t res = (uint128_t){
