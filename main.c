@@ -245,7 +245,7 @@ void print_usage(const char* prog) {
                 type_prefix##_##printf(type_prefix##_##mod_u64(a, b));            \
                 printf("\n");                                                     \
             }                                                                     \
-        } else if (strcmp(mode, "cmp") == 0 && n_args == 4) {                     \
+        } else if (strcmp(mode, "cmp") == 0 && n_args == 3) {                     \
             lpad(buffer_b, b_str, strlen(b_str), '0', sizeof(type) * 2);          \
             type b = type_prefix##_##from_str(buffer_b, sizeof(type) * 2);        \
                                                                                   \

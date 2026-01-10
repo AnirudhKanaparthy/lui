@@ -346,6 +346,42 @@ uint512_t u512_bit_not(uint512_t n) {
     };
 }
 
+bool u512_get_bit(uint512_t op, uint16_t nth) {
+    const uint16_t idx = nth / 64;
+    const uint16_t idx_idx = nth % 64;
+    uint64_t at;
+    switch(idx) {
+        case 0: at = op.low.low.low; break;
+        case 1: at = op.low.low.high; break;
+        case 2: at = op.low.high.low; break;
+        case 3: at = op.low.high.high; break;
+        case 4: at = op.high.low.low; break;
+        case 5: at = op.high.low.high; break;
+        case 6: at = op.high.high.low; break;
+        case 7: at = op.high.high.high; break;
+        default: assert(0 && "UNREACHABLE"); return false;
+    }
+    return at & (1UL << idx_idx);
+}
+
+void u512_set_bit(uint512_t* op, uint16_t nth) {
+    const uint16_t idx = nth / 64;
+    const uint16_t idx_idx = nth % 64;
+    uint64_t* at;
+    switch(idx) {
+        case 0: at = &(op->low.low.low); break;
+        case 1: at = &(op->low.low.high); break;
+        case 2: at = &(op->low.high.low); break;
+        case 3: at = &(op->low.high.high); break;
+        case 4: at = &(op->high.low.low); break;
+        case 5: at = &(op->high.low.high); break;
+        case 6: at = &(op->high.high.low); break;
+        case 7: at = &(op->high.high.high); break;
+        default: assert(0 && "UNREACHABLE"); return;
+    }
+    *at |= (1UL << idx_idx);
+}
+
 u512_divres u512_divmod(uint512_t a, uint512_t b) {
     /**
      * lshift
@@ -357,6 +393,14 @@ u512_divres u512_divmod(uint512_t a, uint512_t b) {
      *
      * =
      */
+    if(u512_eq(b, UINT512_0)) return (u512_divres){};
+    if(u512_eq(b, UINT512_1)) 
+        return (u512_divres){
+            .quotient = a,
+            .remainder = UINT512_0,
+        };
+    
+
     uint512_t quotient = {0};
     uint512_t remainder = {0};
 
@@ -367,7 +411,7 @@ u512_divres u512_divmod(uint512_t a, uint512_t b) {
         quotient = u512_lshift(quotient, 1);
         remainder = u512_lshift(remainder, 1);
         
-        if(u512_bit_and_u64(u512_rshift(a, i - 1), 1).low.low.low & 1) {
+        if(u512_get_bit(a, i - 1)) {
             remainder = u512_inc(remainder);
         }
         
