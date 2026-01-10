@@ -351,25 +351,14 @@ uint512_t u512_bit_not(uint512_t n) {
 bool u512_get_bit(uint512_t op, uint16_t nth) {
     const uint16_t idx = nth / 64;
     const uint16_t idx_idx = nth % 64;
-    return U512_UL(op, idx) & (1UL << idx_idx);
+    return UN_UL3(op, idx) & (1UL << idx_idx);
 }
+
 
 void u512_set_bit(uint512_t* op, uint16_t nth) {
     const uint16_t idx = nth / 64;
     const uint16_t idx_idx = nth % 64;
-    uint64_t* at;
-    switch(idx) {
-        case 0: at = &(op->low.low.low); break;
-        case 1: at = &(op->low.low.high); break;
-        case 2: at = &(op->low.high.low); break;
-        case 3: at = &(op->low.high.high); break;
-        case 4: at = &(op->high.low.low); break;
-        case 5: at = &(op->high.low.high); break;
-        case 6: at = &(op->high.high.low); break;
-        case 7: at = &(op->high.high.high); break;
-        default: assert(0 && "UNREACHABLE"); return;
-    }
-    *at |= (1UL << idx_idx);
+    *(UN_UL3_PTR(*op, idx)) |= (1UL << idx_idx);
 }
 
 u512_divres u512_divmod(uint512_t a, uint512_t b) {

@@ -18,6 +18,14 @@ typedef struct {
 #define UINT128_0 ((uint128_t){.low=0, .high=0})
 #define UINT128_1 ((uint128_t){.low=1, .high=0})
 
+#define UN_UL1(op, idx) ((idx & 0b001) ? (op).high : (op).low)
+#define UN_UL2(op, idx) ((idx & 0b010) ? UN_UL1((op).high, (idx)) : UN_UL1((op).low, (idx)))
+#define UN_UL3(op, idx) ((idx & 0b100) ? UN_UL2((op).high, (idx)) : UN_UL2((op).low, (idx)))
+
+#define UN_UL1_PTR(op, idx) ((idx & 0b001) ? &(op).high : &(op).low)
+#define UN_UL2_PTR(op, idx) ((idx & 0b010) ? UN_UL1_PTR((op).high, (idx)) : UN_UL1_PTR((op).low, (idx)))
+#define UN_UL3_PTR(op, idx) ((idx & 0b100) ? UN_UL2_PTR((op).high, (idx)) : UN_UL2_PTR((op).low, (idx)))
+
 #define U64_UL(x, n) (x)
 #define U128_UL(x, n) ((n) < (sizeof(uint128_t) / sizeof(uint64_t) / 2) ? U64_UL((x).low, (n)) : U64_UL((x).high, (n) - (sizeof(uint128_t) / sizeof(uint64_t) / 2)))
 
