@@ -14,6 +14,7 @@ typedef struct {
 #define UINT256_1 ((uint256_t){.low=UINT128_1, .high=UINT128_0})
 
 #define U128_TO_U256(x) ((uint256_t){.low=(x), .high=UINT128_0})
+#define U256_UL(x, n) ((n) < (sizeof(uint256_t) / sizeof(uint64_t) / 2) ? U128_UL((x).low, (n)) : U128_UL((x).high, (n) - (sizeof(uint256_t) / sizeof(uint64_t) / 2)))
 
 typedef struct {
     uint256_t quotient;

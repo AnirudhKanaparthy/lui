@@ -18,6 +18,9 @@ typedef struct {
 #define UINT128_0 ((uint128_t){.low=0, .high=0})
 #define UINT128_1 ((uint128_t){.low=1, .high=0})
 
+#define U64_UL(x, n) (x)
+#define U128_UL(x, n) ((n) < (sizeof(uint128_t) / sizeof(uint64_t) / 2) ? U64_UL((x).low, (n)) : U64_UL((x).high, (n) - (sizeof(uint128_t) / sizeof(uint64_t) / 2)))
+
 typedef struct {
     uint128_t quotient;
     uint128_t remainder;

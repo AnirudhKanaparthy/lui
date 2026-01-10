@@ -13,6 +13,8 @@ typedef struct {
 #define UINT512_0 ((uint512_t){.low=UINT256_0, .high=UINT256_0})
 #define UINT512_1 ((uint512_t){.low=UINT256_1, .high=UINT256_0})
 
+#define U512_UL(x, n) ((n) < (sizeof(uint512_t) / sizeof(uint64_t) / 2) ? U256_UL((x).low, (n)) : U256_UL((x).high, (n) - (sizeof(uint512_t) / sizeof(uint64_t) / 2)))
+
 typedef struct {
     uint512_t quotient;
     uint512_t remainder;
@@ -349,19 +351,7 @@ uint512_t u512_bit_not(uint512_t n) {
 bool u512_get_bit(uint512_t op, uint16_t nth) {
     const uint16_t idx = nth / 64;
     const uint16_t idx_idx = nth % 64;
-    uint64_t at;
-    switch(idx) {
-        case 0: at = op.low.low.low; break;
-        case 1: at = op.low.low.high; break;
-        case 2: at = op.low.high.low; break;
-        case 3: at = op.low.high.high; break;
-        case 4: at = op.high.low.low; break;
-        case 5: at = op.high.low.high; break;
-        case 6: at = op.high.high.low; break;
-        case 7: at = op.high.high.high; break;
-        default: assert(0 && "UNREACHABLE"); return false;
-    }
-    return at & (1UL << idx_idx);
+    return U512_UL(op, idx) & (1UL << idx_idx);
 }
 
 void u512_set_bit(uint512_t* op, uint16_t nth) {
