@@ -13,5 +13,5 @@ The uint128_t header is made like a stb library. So you may include the header a
 > This is only for educational purposes only.
 
 ## TODO Goals
-1. Write validators for all
-2. Optimize all uint128_t, uint256_t, uint512_t
+1. Optimize all uint128_t, uint256_t, uint512_t
+2. Write validators for all
