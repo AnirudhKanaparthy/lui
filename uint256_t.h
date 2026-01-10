@@ -16,6 +16,9 @@ DEFINE_DIVRES(256);
 #define U256_HIGH(n) (n).high
 #define U256_LEFTMOST_U64(n) ((n).low.low)
 
+#define U256_UL(op, idx) ((idx & 0b010) ? U128_UL((op).high, (idx)) : U128_UL((op).low, (idx)))
+#define U256_UL_PTR(op, idx) ((idx & 0b010) ? U128_UL_PTR((op).high, (idx)) : U128_UL_PTR((op).low, (idx)))
+
 DECLARE_ALL_FUNCS(256, 128, 64);
 
 #endif // UINT256_T_H_

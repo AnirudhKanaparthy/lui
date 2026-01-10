@@ -62,7 +62,13 @@
     bool UN_PREFIX(bits, lt_u64)(UINTN_T(bits) lhs, UINTN_T(64) rhs);                       \
     bool UN_PREFIX(bits, eq_u64)(UINTN_T(bits) lhs, UINTN_T(64) rhs);                       \
     bool UN_PREFIX(bits, ge_u64)(UINTN_T(bits) lhs, UINTN_T(64) rhs);                       \
-    bool UN_PREFIX(bits, le_u64)(UINTN_T(bits) lhs, UINTN_T(64) rhs);
+    bool UN_PREFIX(bits, le_u64)(UINTN_T(bits) lhs, UINTN_T(64) rhs);                       \
+    bool UN_PREFIX(bits, bit_get)(UINTN_T(bits) lhs, UINTN_T(16) rhs);                      \
+    void UN_PREFIX(bits, bit_set)(UINTN_T(bits) lhs, UINTN_T(16) rhs);                      \
+    void UN_PREFIX(bits, bit_clear)(UINTN_T(bits) lhs, UINTN_T(16) rhs);
+
+#define UN_UL(bits) U##bits##_UL
+#define UN_UL_PTR(bits) U##bits##_UL_PTR
 
 #endif // UINTN_T_H_
 
@@ -100,7 +106,10 @@
     DEFINE_LT_U64_FUNC(bits, half_bits);                 \
     DEFINE_EQ_U64_FUNC(bits, half_bits);                 \
     DEFINE_GE_U64_FUNC(bits, half_bits);                 \
-    DEFINE_LE_U64_FUNC(bits, half_bits);
+    DEFINE_LE_U64_FUNC(bits, half_bits);                 \
+    DEFINE_BIT_GET(bits);                                \
+    DEFINE_BIT_SET(bits);                                \
+    DEFINE_BIT_CLEAR(bits);
 
 #define DEFINE_ADD_FUNC(bits, half_bits)                                                \
     UINTN_T(bits) UN_PREFIX(bits, add)(UINTN_T(bits) lhs, UINTN_T(bits) rhs) {          \
@@ -243,7 +252,7 @@
             quotient = UN_PREFIX(bits, lshift)(quotient, 1);                                                       \
             remainder = UN_PREFIX(bits, lshift)(remainder, 1);                                                     \
                                                                                                                    \
-            if(UN_LEFTMOST_U64(bits)(UN_PREFIX(bits, bit_and_u64)(UN_PREFIX(bits, rshift)(lhs, i - 1), 1)) & 1) {  \
+            if(UN_PREFIX(bits, bit_get)(lhs, i - 1)) {                                                             \
                 remainder = UN_PREFIX(bits, inc)(remainder);                                                       \
             }                                                                                                      \
                                                                                                                    \
@@ -427,6 +436,27 @@
     bool UN_PREFIX(bits, le_u64)(UINTN_T(bits) lhs, UINTN_T(64) rhs) {          \
         return !(UN_PREFIX(half_bits, gt_u64)(UN_HIGH(bits)(lhs), UINT64_0) ||  \
                  !UN_PREFIX(half_bits, le_u64)(UN_LOW(bits)(lhs), rhs));        \
+    }
+
+#define DEFINE_BIT_GET(bits)                                                 \
+    bool UN_PREFIX(bits, bit_get)(UINTN_T(bits) lhs, UINTN_T(16) rhs) {      \
+        uint16_t idx = rhs / 64;                                             \
+        uint16_t ul_idx = rhs % 64;                                          \
+        return (UN_UL(bits)(lhs, idx) & (1UL << ul_idx));                    \
+    }
+
+#define DEFINE_BIT_SET(bits)                                             \
+    void UN_PREFIX(bits, bit_set)(UINTN_T(bits) lhs, UINTN_T(16) rhs) {  \
+        uint16_t idx = rhs / 64;                                         \
+        uint16_t ul_idx = rhs % 64;                                      \
+        *(UN_UL_PTR(bits)(lhs, idx)) |= (1UL << ul_idx);                 \
+    }
+
+#define DEFINE_BIT_CLEAR(bits)                                                    \
+    void UN_PREFIX(bits, bit_clear)(UINTN_T(bits) lhs, UINTN_T(16) rhs) {         \
+        uint16_t idx = rhs / 64;                                                  \
+        uint16_t ul_idx = rhs % 64;                                               \
+        *(UN_UL_PTR(bits)(lhs, idx)) = UN_UL(bits)(lhs, idx) & ~(1UL << ul_idx);  \
     }
 
 #endif // UINTN_T_IMPLEMENTATION
