@@ -58,20 +58,22 @@ uint8_t hex_bits(const char c[2]) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // UINT128_T
-uint128_t u128_from_str(const char* str, int size) {
-    // TODO: Improve on this so that it can deal with shorter strings than 32
-    if (size != 32) {
+uint128_t u128_from_hex(const char* str, int size) {
+    // Little Endian, also str must contain '\0' at the end
+
+    if (size > 32) {
         return (uint128_t){};
     }
     uint128_t res = {0};
     uint8_t* cur = (uint8_t*)&res;
-   
-    uint16_t* str16 = (uint16_t*)str;
-    const int len = size / 2;
-    for (int i = 0; i < len; ++i) {
-        const int idx = len - i - 1;
-        cur[i] = hex_bits((char*)(str16 + idx));
+    
+    int j = 0;
+    for (int i = 0; i < size; i += 2) {
+        const int idx = size - i - 1;
+        const uint8_t h = hex_bits(str + (idx - 1));
+        cur[j++] = h;
     }
+
     return res;
 }
 
@@ -94,20 +96,22 @@ void u128_printf(uint128_t n) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // UINT256_T
-uint256_t u256_from_str(const char* str, int size) {
-    // TODO: Improve on this so that it can deal with shorter strings than 32
-    if (size != 64) {
+uint256_t u256_from_hex(const char* str, int size) {
+    // Little Endian, also str must contain '\0' at the end
+
+    if (size > 64) {
         return (uint256_t){};
     }
     uint256_t res = {0};
     uint8_t* cur = (uint8_t*)&res;
-   
-    uint16_t* str16 = (uint16_t*)str;
-    const int len = size / 2;
-    for (int i = 0; i < len; ++i) {
-        const int idx = len - i - 1;
-        cur[i] = hex_bits((char*)(str16 + idx));
+    
+    int j = 0;
+    for (int i = 0; i < size; i += 2) {
+        const int idx = size - i - 1;
+        const uint8_t h = hex_bits(str + (idx - 1));
+        cur[j++] = h;
     }
+
     return res;
 }
 
@@ -135,20 +139,21 @@ void u256_printf(uint256_t n) {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // UINT512_T
 
-uint512_t u512_from_str(const char* str, int size) {
-    // TODO: Improve on this so that it can deal with shorter strings than 32
-    if (size != 512 / 4) {
+uint512_t u512_from_hex(const char* str, int size) {
+    // Little Endian, also str must contain '\0' at the end
+    if (size > 128) {
         return (uint512_t){};
     }
     uint512_t res = {0};
     uint8_t* cur = (uint8_t*)&res;
-   
-    uint16_t* str16 = (uint16_t*)str;
-    const int len = size / 2;
-    for (int i = 0; i < len; ++i) {
-        const int idx = len - i - 1;
-        cur[i] = hex_bits((char*)(str16 + idx));
+    
+    int j = 0;
+    for (int i = 0; i < size; i += 2) {
+        const int idx = size - i - 1;
+        const uint8_t h = hex_bits(str + (idx - 1));
+        cur[j++] = h;
     }
+
     return res;
 }
 
@@ -201,11 +206,11 @@ void print_usage(const char* prog) {
         char buffer_b[sizeof(type) * 2 + 1] = {0};                                \
                                                                                   \
         lpad(buffer_a, a_str, strlen(a_str), '0', sizeof(type) * 2);              \
-        type a = type_prefix##_##from_str(buffer_a, sizeof(type) * 2);            \
+        type a = type_prefix##_##from_hex(buffer_a, sizeof(type) * 2);            \
                                                                                   \
         if (strcmp(mode, "arith") == 0 && n_args == 3) {                          \
             lpad(buffer_b, b_str, strlen(b_str), '0', sizeof(type) * 2);          \
-            type b = type_prefix##_##from_str(buffer_b, sizeof(type) * 2);        \
+            type b = type_prefix##_##from_hex(buffer_b, sizeof(type) * 2);        \
                                                                                   \
             printf("add=");                                                       \
             type_prefix##_##printf(type_prefix##_##add(a, b));                    \
@@ -247,7 +252,7 @@ void print_usage(const char* prog) {
             }                                                                     \
         } else if (strcmp(mode, "cmp") == 0 && n_args == 3) {                     \
             lpad(buffer_b, b_str, strlen(b_str), '0', sizeof(type) * 2);          \
-            type b = type_prefix##_##from_str(buffer_b, sizeof(type) * 2);        \
+            type b = type_prefix##_##from_hex(buffer_b, sizeof(type) * 2);        \
                                                                                   \
             printf("lt=%d\n", type_prefix##_##lt(a, b));                          \
             printf("le=%d\n", type_prefix##_##le(a, b));                          \
@@ -273,7 +278,7 @@ void print_usage(const char* prog) {
             printf("\n");                                                         \
         } else if (strcmp(mode, "bitwise") == 0 && n_args == 3) {                 \
             lpad(buffer_b, b_str, strlen(b_str), '0', sizeof(type) * 2);          \
-            type b = type_prefix##_##from_str(buffer_b, sizeof(type) * 2);        \
+            type b = type_prefix##_##from_hex(buffer_b, sizeof(type) * 2);        \
                                                                                   \
             printf("and=");                                                       \
             type_prefix##_##printf(type_prefix##_##bit_and(a, b));                \

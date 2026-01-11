@@ -144,7 +144,7 @@
             .high = UN_HIGH(bits)(lhs),                                                                              \
         };                                                                                                           \
         if(UN_PREFIX(half_bits, gt_u64)(UN_LOW(bits)(lhs), 0) &&                                                     \
-           UN_PREFIX(half_bits, le_u64)(UN_PREFIX(half_bits, sub)(UINTN_MAX(half_bits), UN_LOW(bits)(lhs)), rhs)) {  \
+           UN_PREFIX(half_bits, lt_u64)(UN_PREFIX(half_bits, sub)(UINTN_MAX(half_bits), UN_LOW(bits)(lhs)), rhs)) {  \
             UN_HIGH(bits)(res) = UN_PREFIX(half_bits, inc)(UN_HIGH(bits)(res));                                      \
         }                                                                                                            \
         return res;                                                                                                  \
@@ -300,35 +300,45 @@
     }
 
 #define DEFINE_LSHIFT_FUNC(bits, half_bits)                                                                                                                                               \
-    UINTN_T(bits) UN_PREFIX(bits, lshift)(UINTN_T(bits) n, uint16_t amount) {                                                                                                             \
-        UINTN_T(bits) res = (UINTN_T(bits)){                                                                                                                                              \
-            .low = UN_LOW(bits)(n),                                                                                                                                                       \
-            .high = UN_HIGH(bits)(n),                                                                                                                                                     \
-        };                                                                                                                                                                                \
-                                                                                                                                                                                          \
-        for(int i = 0; i < amount; ++i) {                                                                                                                                                 \
-            UN_HIGH(bits)(res) = UN_PREFIX(half_bits, lshift)(UN_HIGH(bits)(res), 1);                                                                                                     \
-            UN_HIGH(bits)(res) = UN_PREFIX(half_bits, bit_or)(UN_HIGH(bits)(res), UN_PREFIX(half_bits, bit_and_u64)(UN_PREFIX(half_bits, rshift)(UN_LOW(bits)(res), half_bits - 1), 1));  \
-            UN_LOW(bits)(res) = UN_PREFIX(half_bits, lshift)(UN_LOW(bits)(res), 1);                                                                                                       \
-        }                                                                                                                                                                                 \
-                                                                                                                                                                                          \
-        return res;                                                                                                                                                                       \
+    UINTN_T(bits) UN_PREFIX(bits, lshift)(UINTN_T(bits) n, uint16_t amount) {                       \
+        if(amount == 0) return n;                                                                   \
+        if(amount >= bits) return UINTN_0(bits);                                                    \
+        if(amount < half_bits) {                                                                    \
+            UINTN_T(half_bits) temp = UN_LOW(bits)(n);                                              \
+            temp = UN_PREFIX(half_bits, rshift)(temp, half_bits - amount);                          \
+                                                                                                    \
+            UN_HIGH(bits)(n) = UN_PREFIX(half_bits, lshift)(UN_HIGH(bits)(n), amount);              \
+            UN_LOW(bits)(n) = UN_PREFIX(half_bits, lshift)(UN_LOW(bits)(n), amount);                \
+                                                                                                    \
+            UN_HIGH(bits)(n) = UN_PREFIX(half_bits, bit_or)(UN_HIGH(bits)(n), temp);                \
+        } else {                                                                                    \
+            UN_HIGH(bits)(n) = UN_LOW(bits)(n);                                                     \
+            UN_LOW(bits)(n) = UINTN_0(half_bits);                                                   \
+            UN_HIGH(bits)(n) = UN_PREFIX(half_bits, lshift)(UN_HIGH(bits)(n), amount - half_bits);  \
+        }                                                                                           \
+                                                                                                    \
+        return n;                                                                                   \
     }
 
 #define DEFINE_RSHIFT_FUNC(bits, half_bits)                                                                                                                                              \
-    UINTN_T(bits) UN_PREFIX(bits, rshift)(UINTN_T(bits) n, UINTN_T(16) amount) {                                                                                                         \
-        UINTN_T(bits) res = (UINTN_T(bits)){                                                                                                                                             \
-            .low = UN_LOW(bits)(n),                                                                                                                                                      \
-            .high = UN_HIGH(bits)(n),                                                                                                                                                    \
-        };                                                                                                                                                                               \
-                                                                                                                                                                                         \
-        for(int i = 0; i < amount; ++i) {                                                                                                                                                \
-            UN_LOW(bits)(res) = UN_PREFIX(half_bits, rshift)(UN_LOW(bits)(res), 1);                                                                                                      \
-            UN_LOW(bits)(res) = UN_PREFIX(half_bits, bit_or)(UN_LOW(bits)(res), UN_PREFIX(half_bits, lshift)(UN_PREFIX(half_bits, bit_and_u64)(UN_HIGH(bits)(res), 1), half_bits - 1));  \
-            UN_HIGH(bits)(res) = UN_PREFIX(half_bits, rshift)(UN_HIGH(bits)(res), 1);                                                                                                    \
-        }                                                                                                                                                                                \
-                                                                                                                                                                                         \
-        return res;                                                                                                                                                                      \
+    UINTN_T(bits) UN_PREFIX(bits, rshift)(UINTN_T(bits) n, UINTN_T(16) amount) {                  \
+        if(amount == 0) return n;                                                                 \
+        if(amount >= bits) return UINTN_0(bits);                                                  \
+        if(amount < half_bits) {                                                                  \
+            UINTN_T(half_bits) temp = UN_HIGH(bits)(n);                                           \
+            temp = UN_PREFIX(half_bits, lshift)(temp, half_bits - amount);                        \
+                                                                                                  \
+            UN_HIGH(bits)(n) = UN_PREFIX(half_bits, rshift)(UN_HIGH(bits)(n), amount);            \
+            UN_LOW(bits)(n) = UN_PREFIX(half_bits, rshift)(UN_LOW(bits)(n), amount);              \
+                                                                                                  \
+            UN_LOW(bits)(n) = UN_PREFIX(half_bits, bit_or)(UN_LOW(bits)(n), temp);                \
+        } else {                                                                                  \
+            UN_LOW(bits)(n) = UN_HIGH(bits)(n);                                                   \
+            UN_HIGH(bits)(n) = UINTN_0(half_bits);                                                \
+            UN_LOW(bits)(n) = UN_PREFIX(half_bits, rshift)(UN_LOW(bits)(n), amount - half_bits);  \
+        }                                                                                         \
+                                                                                                  \
+        return n;                                                                                 \
     }
 
 #define DEFINE_BIT_NOT_FUNC(bits, half_bits)                                                                                      \
@@ -440,22 +450,22 @@
 
 #define DEFINE_BIT_GET(bits)                                                 \
     bool UN_PREFIX(bits, bit_get)(UINTN_T(bits) lhs, UINTN_T(16) rhs) {      \
-        uint16_t idx = rhs / 64;                                             \
-        uint16_t ul_idx = rhs % 64;                                          \
+        UINTN_T(16) idx = rhs / 64;                                          \
+        UINTN_T(16) ul_idx = rhs % 64;                                       \
         return (UN_UL(bits)(lhs, idx) & (1UL << ul_idx));                    \
     }
 
 #define DEFINE_BIT_SET(bits)                                             \
     void UN_PREFIX(bits, bit_set)(UINTN_T(bits) lhs, UINTN_T(16) rhs) {  \
-        uint16_t idx = rhs / 64;                                         \
-        uint16_t ul_idx = rhs % 64;                                      \
+        UINTN_T(16) idx = rhs / 64;                                      \
+        UINTN_T(16) ul_idx = rhs % 64;                                   \
         *(UN_UL_PTR(bits)(lhs, idx)) |= (1UL << ul_idx);                 \
     }
 
 #define DEFINE_BIT_CLEAR(bits)                                                    \
     void UN_PREFIX(bits, bit_clear)(UINTN_T(bits) lhs, UINTN_T(16) rhs) {         \
-        uint16_t idx = rhs / 64;                                                  \
-        uint16_t ul_idx = rhs % 64;                                               \
+        UINTN_T(16) idx = rhs / 64;                                               \
+        UINTN_T(16) ul_idx = rhs % 64;                                            \
         *(UN_UL_PTR(bits)(lhs, idx)) = UN_UL(bits)(lhs, idx) & ~(1UL << ul_idx);  \
     }
 
