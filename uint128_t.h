@@ -275,33 +275,43 @@ bool u128_gt_u64(uint128_t a, uint64_t b) {
 }
 
 uint128_t u128_lshift(uint128_t n, uint16_t amount) {
-    uint128_t res = (uint128_t){
-        .high = n.high,
-        .low = n.low,
-    };
+    /**
+     * 0000 0001 << 7
+     * 0101
+     * 
+     */
 
-    for(int i = 0; i < amount; ++i) {
-        res.high = res.high << 1;
-        res.high = res.high | ((res.low >> 63) & 1);
-        res.low = res.low << 1;
+    if (amount < 64) {
+        uint64_t temp = n.low;
+        temp >>= (64 - amount);
+    
+        n.high <<= amount;
+        n.low <<= amount;
+        n.high |= temp;
+    } else {
+        n.high = n.low;
+        n.low = 0;
+        n.high <<= (amount - 64);
     }
 
-    return res;
+    return n;
 }
 
 uint128_t u128_rshift(uint128_t n, uint16_t amount) {
-    uint128_t res = (uint128_t){
-        .low = n.low,
-        .high = n.high,
-    };
-
-    for(int i = 0; i < amount; ++i) {
-        res.low = res.low >> 1;
-        res.low = res.low | ((res.high << 63) & ((uint64_t)1 << 63));
-        res.high = res.high >> 1;
+    if (amount < 64) {
+        uint64_t temp = n.high;
+        temp <<= (64 - amount);
+    
+        n.high >>= amount;
+        n.low >>= amount;
+        n.low |= temp;
+    } else {
+        n.low = n.high;
+        n.high = 0;
+        n.low >>= (amount - 64);
     }
 
-    return res;
+    return n;
 }
 
 uint128_t u128_bit_and(uint128_t a, uint128_t b) {
