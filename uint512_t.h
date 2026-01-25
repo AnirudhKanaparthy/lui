@@ -16,8 +16,8 @@ DEFINE_DIVRES(512);
 #define U512_HIGH(n) (n).high
 #define U512_LEFTMOST_U64(n) ((n).low.low.low)
 
-#define U512_UL(op, idx) ((idx & 0b100) ? U256_UL((op).high, (idx)) : U256_UL((op).low, (idx)))
-#define U512_UL_PTR(op, idx) ((idx & 0b100) ? U256_UL_PTR((op).high, (idx)) : U256_UL_PTR((op).low, (idx)))
+#define U512_UL(op, idx) (((idx) & 0b100) ? U256_UL((op).high, (idx)) : U256_UL((op).low, (idx)))
+#define U512_UL_PTR(op, idx) (((idx) & 0b100) ? U256_UL_PTR((op).high, (idx)) : U256_UL_PTR((op).low, (idx)))
 
 DECLARE_ALL_FUNCS(512, 256, 128);
 

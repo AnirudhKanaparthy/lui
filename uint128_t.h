@@ -72,8 +72,8 @@ DEFINE_DIVRES(128);
 #define U128_HIGH(n) (n).high
 #define U128_LEFTMOST_U64(n) (n).low
 
-#define U128_UL(op, idx) ((idx & 0b001) ? (op).high : (op).low)
-#define U128_UL_PTR(op, idx) ((idx & 0b001) ? &(op).high : &(op).low)
+#define U128_UL(op, idx) (((idx) & 0b001) ? (op).high : (op).low)
+#define U128_UL_PTR(op, idx) (((idx) & 0b001) ? &(op).high : &(op).low)
 
 DECLARE_ALL_FUNCS(128, 64, 32);
 

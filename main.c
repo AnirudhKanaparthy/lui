@@ -56,149 +56,57 @@ uint8_t hex_bits(const char c[2]) {
     return res;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
-// UINT128_T
-uint128_t u128_from_hex(const char* str, int size) {
-    // Little Endian, also str must contain '\0' at the end
-
-    if (size > 32) {
-        return (uint128_t){};
-    }
-    uint128_t res = {0};
-    uint8_t* cur = (uint8_t*)&res;
-    
-    int j = 0;
-    for (int i = 0; i < size; i += 2) {
-        const int idx = size - i - 1;
-        const uint8_t h = hex_bits(str + (idx - 1));
-        cur[j++] = h;
-    }
-
-    return res;
-}
-
-void u128_sprintf(char* out, uint128_t n) {
-    if (!out) return;
-   
-    if (n.high) {
-        sprintf(out, "%lx%0*lx", n.high, 64/4, n.low);
-    } else {
-        sprintf(out, "%lx", n.low);
-    }
-}
-
-void u128_printf(uint128_t n) {
-    static char buffer[33] = {0};
-    memset(buffer, 0, sizeof(buffer));
-    u128_sprintf(buffer, n);
-    printf("%s", buffer);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-// UINT256_T
-uint256_t u256_from_hex(const char* str, int size) {
-    // Little Endian, also str must contain '\0' at the end
-
-    if (size > 64) {
-        return (uint256_t){};
-    }
-    uint256_t res = {0};
-    uint8_t* cur = (uint8_t*)&res;
-    
-    int j = 0;
-    for (int i = 0; i < size; i += 2) {
-        const int idx = size - i - 1;
-        const uint8_t h = hex_bits(str + (idx - 1));
-        cur[j++] = h;
+#define DEFINE_SPRINTF_FUNC(bits)                               \
+    int UN_PREFIX(bits, sprintf)(char* out, UINTN_T(bits) n) {  \
+        if (!out) return -1;                                    \
+                                                                \
+        bool inside = false;                                    \
+        const long n_64s = (bits/64);                           \
+        const char* start = out;                                \
+                                                                \
+        for(long i = 0; i < n_64s; ++i) {                       \
+            const long idx = n_64s - i - 1;                     \
+            const uint64_t val = UN_UL(bits)(n, idx);           \
+                                                                \
+            if(!inside && (val != UINT64_0 || idx == 0)) {      \
+                inside = true;                                  \
+                out += sprintf(out, "%lx", val);                \
+            } else if(inside) {                                 \
+                out += sprintf(out, "%0*lx", 64/4, val);        \
+            }                                                   \
+        }                                                       \
+        return (int)(out - start);                              \
     }
 
-    return res;
-}
-
-void u256_sprintf(char* out, uint256_t n) {
-    if (!out) return;
-   
-    if (n.high.high) {
-        sprintf(out, "%lx%0*lx%0*lx%0*lx", n.high.high, 64/4, n.high.low, 64/4, n.low.high, 64/4, n.low.low);
-    } else if(n.high.low) {
-        sprintf(out, "%lx%0*lx%0*lx", n.high.low, 64/4, n.low.high, 64/4, n.low.low);
-    } else if(n.low.high) {
-        sprintf(out, "%lx%0*lx", n.low.high, 64/4, n.low.low);
-    } else {
-        sprintf(out, "%lx", n.low.low);
+#define DEFINE_FROM_HEX_FUNC(bits)                                        \
+    UINTN_T(bits) UN_PREFIX(bits, from_hex)(const char* str, int size) {  \
+        /* Little Endian, also str must contain '\0' at the end */        \
+                                                                          \
+        if (size > (bits / 4)) {                                          \
+            return UINTN_0(bits);                                         \
+        }                                                                 \
+        UINTN_T(bits) res = {0};                                          \
+        uint8_t* cur = (uint8_t*)&res;                                    \
+                                                                          \
+        int j = 0;                                                        \
+        for (int i = 0; i < size; i += 2) {                               \
+            const int idx = size - i - 1;                                 \
+            const uint8_t h = hex_bits(str + (idx - 1));                  \
+            cur[j++] = h;                                                 \
+        }                                                                 \
+                                                                          \
+        return res;                                                       \
     }
-}
 
-void u256_printf(uint256_t n) {
-    static char buffer[65] = {0};
-    memset(buffer, 0, sizeof(buffer));
-    u256_sprintf(buffer, n);
-    printf("%s", buffer);
-}
+#define DEFINE_PRINTF_FUNC(bits)                    \
+    int UN_PREFIX(bits, printf)(UINTN_T(bits) n) {  \
+        static char buffer[(bits / 4) + 1] = {0};   \
+        memset(buffer, 0, sizeof(buffer));          \
+        UN_PREFIX(bits, sprintf)(buffer, n);        \
+        return printf("%s", buffer);                \
+    }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
-// UINT512_T
-
-uint512_t u512_from_hex(const char* str, int size) {
-    // Little Endian, also str must contain '\0' at the end
-    if (size > 128) {
-        return (uint512_t){};
-    }
-    uint512_t res = {0};
-    uint8_t* cur = (uint8_t*)&res;
-    
-    int j = 0;
-    for (int i = 0; i < size; i += 2) {
-        const int idx = size - i - 1;
-        const uint8_t h = hex_bits(str + (idx - 1));
-        cur[j++] = h;
-    }
-
-    return res;
-}
-
-void u512_sprintf(char* out, uint512_t n) {
-    if (!out) return;
-    
-    if (n.high.high.high) {
-        sprintf(out, "%lx%0*lx%0*lx%0*lx%0*lx%0*lx%0*lx%0*lx", n.high.high.high, 64/4, n.high.high.low, 64/4, n.high.low.high, 64/4, n.high.low.low, 64/4, n.low.high.high, 64/4, n.low.high.low, 64/4, n.low.low.high, 64/4, n.low.low.low);
-    } else if(n.high.high.low) {
-        sprintf(out, "%lx%0*lx%0*lx%0*lx%0*lx%0*lx%0*lx", n.high.high.low, 64/4, n.high.low.high, 64/4, n.high.low.low, 64/4, n.low.high.high, 64/4, n.low.high.low, 64/4, n.low.low.high, 64/4, n.low.low.low);
-    } else if(n.high.low.high) {
-        sprintf(out, "%lx%0*lx%0*lx%0*lx%0*lx%0*lx", n.high.low.high, 64/4, n.high.low.low, 64/4, n.low.high.high, 64/4, n.low.high.low, 64/4, n.low.low.high, 64/4, n.low.low.low);
-    } else if (n.high.low.low) {
-        sprintf(out, "%lx%0*lx%0*lx%0*lx%0*lx", n.high.low.low, 64/2, n.low.high.high, 64/4, n.low.high.low, 64/4, n.low.low.high, 64/4, n.low.low.low);
-    } else if(n.low.high.high) {
-        sprintf(out, "%lx%0*lx%0*lx%0*lx", n.low.high.high, 64/4, n.low.high.low, 64/4, n.low.low.high, 64/4, n.low.low.low);
-    } else if(n.low.high.low) {
-        sprintf(out, "%lx%0*lx%0*lx", n.low.high.low, 64/4, n.low.low.high, 64/4, n.low.low.low);
-    } else if(n.low.low.high) {
-        sprintf(out, "%lx%0*lx", n.low.low.high, 64/4, n.low.low.low);
-    } else {
-        sprintf(out, "%lx", n.low.low.low);
-    }
-}
-
-void u512_printf(uint512_t n) {
-    static char buffer[512 / 4 + 1] = {0};
-    memset(buffer, 0, sizeof(buffer));
-    u512_sprintf(buffer, n);
-    printf("%s", buffer);
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-void print_usage(const char* prog) {
-    printf("Usage:\n");
-    printf("  %s <bits> arith <hex_a> <hex_b>       - test +, -, *, /, %%\n", prog);
-    printf("  %s <bits> arith_u64 <hex_a> <hex_b>   - test +, -, *, /, %% with u64\n", prog);
-    printf("  %s <bits> cmp <hex_a> <hex_b>         - test <, <=, ==, >=, >\n", prog);
-    printf("  %s <bits> cmp_u64 <hex_a> <hex_b>     - test comparisons with u64\n", prog);
-    printf("  %s <bits> shift <hex_a> <amount>      - test <<, >>\n", prog);
-    printf("  %s <bits> bitwise <hex_a> <hex_b>     - test &, |\n", prog);
-    printf("  %s <bits> bitwise_u64 <hex_a> <hex_b> - test &, | with u64\n", prog);
-    printf("  %s <bits> unary <hex_a>               - test inc, dec, not\n", prog);
-}
 
 #define CREATE_TEST(type, type_prefix)                                            \
     int type_prefix##_##test(int n_args, char *mode, char *a_str, char *b_str) {  \
@@ -312,9 +220,33 @@ void print_usage(const char* prog) {
         return 0;                                                                 \
     }
 
+DEFINE_SPRINTF_FUNC(128);
+DEFINE_FROM_HEX_FUNC(128);
+DEFINE_PRINTF_FUNC(128);
+
+DEFINE_SPRINTF_FUNC(256);
+DEFINE_FROM_HEX_FUNC(256);
+DEFINE_PRINTF_FUNC(256);
+
+DEFINE_SPRINTF_FUNC(512);
+DEFINE_FROM_HEX_FUNC(512);
+DEFINE_PRINTF_FUNC(512);
+
 CREATE_TEST(uint128_t, u128);
 CREATE_TEST(uint256_t, u256);
 CREATE_TEST(uint512_t, u512);
+
+void print_usage(const char* prog) {
+    printf("Usage:\n");
+    printf("  %s <bits> arith <hex_a> <hex_b>       - test +, -, *, /, %%\n", prog);
+    printf("  %s <bits> arith_u64 <hex_a> <hex_b>   - test +, -, *, /, %% with u64\n", prog);
+    printf("  %s <bits> cmp <hex_a> <hex_b>         - test <, <=, ==, >=, >\n", prog);
+    printf("  %s <bits> cmp_u64 <hex_a> <hex_b>     - test comparisons with u64\n", prog);
+    printf("  %s <bits> shift <hex_a> <amount>      - test <<, >>\n", prog);
+    printf("  %s <bits> bitwise <hex_a> <hex_b>     - test &, |\n", prog);
+    printf("  %s <bits> bitwise_u64 <hex_a> <hex_b> - test &, | with u64\n", prog);
+    printf("  %s <bits> unary <hex_a>               - test inc, dec, not\n", prog);
+}
 
 int main(int argc, char* argv[]) {
     if (argc < 4) {
